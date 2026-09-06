@@ -1,22 +1,28 @@
 from __future__ import annotations
 
+import json
+import logging
 import os
 import pathlib
 import time
 
-import structlog
 from livekit.agents import Agent, AgentSession, JobContext
-from livekit.plugins import google, silero
+from livekit.agents import vad as lk_vad
+from livekit.plugins import google
 
 from agent.providers.stt.sarvam import SarvamSTT
 from agent.providers.tts.sarvam import SarvamLKTTS
 
-log = structlog.get_logger()
+log = logging.getLogger(__name__)
 
 _PROMPT_PATH = pathlib.Path(__file__).parent / "prompts" / "tutor_v1.md"
 
 
-async def run_session(ctx: JobContext) -> None:
+def _trace(**fields) -> None:
+    log.info(json.dumps(fields))
+
+
+async def run_session(ctx: JobContext, *, vad: lk_vad.VAD) -> None:
     await ctx.connect()
 
     system_prompt = _PROMPT_PATH.read_text()
@@ -32,7 +38,7 @@ async def run_session(ctx: JobContext) -> None:
             temperature=0.7,
         ),
         tts=tts,
-        vad=silero.VAD.load(),
+        vad=vad,
     )
 
     _turn_start: dict[str, float] = {"t": 0.0}
@@ -42,8 +48,8 @@ async def run_session(ctx: JobContext) -> None:
         if not ev.is_final:
             return
         _turn_start["t"] = time.perf_counter()
-        log.info(
-            "turn.stt",
+        _trace(
+            event="turn.stt",
             transcript=ev.transcript,
             stt_ms=round(stt.last_latency_ms, 1),
             stt_engine=stt.name,
@@ -51,11 +57,10 @@ async def run_session(ctx: JobContext) -> None:
 
     @session.on("agent_state_changed")
     def _on_state_changed(ev) -> None:
-        # log a complete turn trace when the agent transitions back to listening/idle
         if ev.old_state == "speaking" and ev.new_state in ("listening", "idle"):
             elapsed = (time.perf_counter() - _turn_start["t"]) * 1000
-            log.info(
-                "turn",
+            _trace(
+                event="turn",
                 stt_ms=round(stt.last_latency_ms, 1),
                 stt_engine=stt.name,
                 tts_ttfb_ms=round(tts.last_ttfb_ms, 1),

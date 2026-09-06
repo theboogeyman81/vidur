@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import os
 import time
 import uuid
@@ -13,6 +14,8 @@ from livekit.agents import tts as lk_tts
 from livekit.agents.tts.tts import AudioEmitter
 
 from agent.providers.base import TTSResult
+
+_log = logging.getLogger(__name__)
 
 _SARVAM_TTS_URL = "https://api.sarvam.ai/text-to-speech"
 _SARVAM_SAMPLE_RATE = 22050
@@ -58,8 +61,8 @@ class SarvamTTS:
                 json={
                     "inputs": [text[:500]],
                     "target_language_code": lang,
-                    "speaker": "meera",
-                    "model": "bulbul:v1",
+                    "speaker": "kavya",
+                    "model": "bulbul:v3",
                     "enable_preprocessing": True,
                 },
             )
@@ -98,12 +101,14 @@ class _SarvamChunkedStream(lk_tts.ChunkedStream):
                     json={
                         "inputs": [chunk],
                         "target_language_code": self._lang,
-                        "speaker": "meera",
-                        "model": "bulbul:v1",
+                        "speaker": "kavya",
+                        "model": "bulbul:v3",
                         "enable_preprocessing": True,
                     },
                 )
-            r.raise_for_status()
+            if r.is_error:
+                _log.error("tts: Sarvam %d — %s", r.status_code, r.text[:500])
+                r.raise_for_status()
             wav_bytes = base64.b64decode(r.json()["audios"][0])
 
             with wave.open(io.BytesIO(wav_bytes)) as wf:
