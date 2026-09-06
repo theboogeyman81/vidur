@@ -38,5 +38,14 @@ async def entrypoint(ctx: JobContext) -> None:
     await run_session(ctx, vad=ctx.proc.userdata["vad"])
 
 
+async def _startup() -> None:
+    from api.db import init_db
+
+    await init_db()
+
+
 if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(_startup())
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))

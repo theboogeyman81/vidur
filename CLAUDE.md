@@ -31,7 +31,7 @@ If you have to cut scope, cut from the agent, not the harness.
 | Voice orchestration | LiveKit Agents (Python) | handles VAD, turn detection, barge-in, WebRTC |
 | STT (default) | Sarvam Saarika | Indian-language native; the others are for the leaderboard |
 | STT (benchmarked) | Deepgram Nova, Whisper large-v3, Google STT | |
-| LLM | Gemini 2.5 Flash | picked for first-token latency, not quality |
+| LLM | Gemini 3.6 Flash | picked for first-token latency, not quality |
 | TTS (default) | Sarvam Bulbul | |
 | TTS (benchmarked) | Cartesia Sonic, ElevenLabs Flash, self-hosted Piper | |
 | Agent framework (voice path) | Pydantic AI | tool calling + typed outputs; kept thin for latency |
