@@ -10,6 +10,8 @@ dependencies = [
     "pydantic>=2.7",
     "python-dotenv>=1.0",
     "structlog>=24.0",
+    "pydantic-ai[google]>=0.0.14",
+    "aiosqlite>=0.20",
 ]
 
 [tool.ruff]
