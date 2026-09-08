@@ -13,5 +13,5 @@ async def retrieve_tool(ctx: RunContext[dict], query: str) -> str:
         # TODO 2.10: log rag_total_ms to Langfuse span
         _ = round((time.perf_counter() - t0) * 1000, 1)
         return "\n\n".join(c.text for c in chunks)
-    except ImportError:
-        return "[RAG retriever not yet available]"
+    except Exception as e:
+        return f"[RAG unavailable: {type(e).__name__}]"

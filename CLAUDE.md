@@ -55,25 +55,23 @@ Budget ceiling: ~$10 for the whole build. Prefer free tiers and local models. If
 vidur/
 ├── agent/                  # LiveKit voice agent
 │   ├── worker.py           # entrypoint — LiveKit agent worker
-│   ├── session.py          # turn loop, interruption handling
+│   ├── session.py          # turn loop, Langfuse tracing, turn logging
+│   ├── brain.py            # Pydantic AI Agent + tool registration
 │   ├── prompts/            # system prompts, versioned as files not strings
 │   ├── tools/              # tool-calling functions
-│   │   ├── retrieve.py     # RAG lookup
+│   │   ├── retrieve.py     # RAG lookup (falls back gracefully if Qdrant unavailable)
 │   │   ├── quiz.py         # generate a question on a topic
 │   │   └── progress.py     # log what the student covered
 │   └── providers/          # thin adapters — one interface per STT/TTS vendor
-│       ├── stt/
-│       └── tts/
-├── rag/                    # ingestion + LangGraph corrective-RAG
-│   ├── loader.py           # NCERT chapter subset → chunks
-│   ├── embedder.py
-│   ├── retriever.py        # hybrid dense + sparse search over Qdrant
-│   ├── graph.py            # LangGraph StateGraph — the corrective loop
-│   └── nodes/
-│       ├── retrieve.py     # pull top-k
-│       ├── grade.py        # LLM grades each chunk relevant / not
-│       ├── rewrite.py      # reformulate the query, loop back
-│       └── generate.py     # compose the grounded answer
+│       ├── stt/            # __init__.py registry + sarvam, deepgram, whisper, google
+│       └── tts/            # __init__.py registry + sarvam, cartesia, elevenlabs, piper
+├── rag/                    # ingestion + retrieval (Phase 2: naive top-k; Phase 3: corrective graph)
+│   ├── loader.py           # NCERT PDFs → chunks.json (token-based, 400/50 overlap)
+│   ├── embedder.py         # chunks → Voyage dense + BM25 sparse → Qdrant upsert
+│   ├── retriever.py        # hybrid dense+sparse search via RRF, returns list[Chunk]
+│   ├── data/ncert/         # drop NCERT chapter PDFs here (not committed)
+│   ├── graph.py            # [Phase 3] LangGraph StateGraph — the corrective loop
+│   └── nodes/              # [Phase 3] retrieve / grade / rewrite / generate nodes
 ├── evals/                  # THE IMPORTANT PART
 │   ├── datasets/
 │   │   ├── stt_hinglish/   # ~100 audio clips + ground-truth transcripts
@@ -184,11 +182,11 @@ Target: e2e p95 under 1200ms. If you can't hit it, say so in FINDINGS.md with th
 
 Follow spec-driven, branch-per-feature. Do not start a phase until the previous one is merged and demoable.
 
-**Phase 1 — `feat/voice-loop`**
+**Phase 1 — `feat/voice-loop`** ✅ done
 LiveKit agent worker. Sarvam STT → Gemini → Sarvam TTS. Hardcoded prompt. No RAG, no tools. Deployed and talking. This must work end-to-end before anything else exists.
 
-**Phase 2 — `feat/tools-and-baseline-rag`**
-Provider adapter layer. Pydantic AI agent with the three tools. NCERT subset ingested to Qdrant. **Naive top-k retrieval only** — no graph yet. Langfuse tracing wired to every turn. This baseline exists so Phase 3 has something to beat.
+**Phase 2 — `feat/tools-and-baseline-rag`** ✅ done
+Provider adapter layer. Pydantic AI agent with the three tools. NCERT subset ingested to Qdrant. **Naive top-k retrieval only** — no graph yet. Langfuse tracing wired to every turn. FastAPI `/token` endpoint. SQLite sessions + turns tables. This baseline exists so Phase 3 has something to beat.
 
 **Phase 3 — `feat/corrective-rag`**
 Build `rag_qa/` eval set first (~50 question + ground-truth-chunk pairs). Run `run_rag_eval.py` against the Phase 2 baseline and record the numbers. *Then* build the LangGraph corrective loop and re-run. Two `results.json` files, before and after. The delta is the deliverable — if the graph doesn't beat the baseline, say so in FINDINGS.md and keep the honest result.
@@ -217,7 +215,7 @@ FINDINGS.md, README with a real architecture diagram, deploy, Loom script.
 - Prompts live in `prompts/*.md` as versioned files, never inline strings
 - All secrets via `.env`, never committed; ship a `.env.example`
 - `async` throughout the agent path — one blocking call ruins the latency budget
-- Structured logging (`structlog`), JSON in prod
+- Structured logging (stdlib `logging` + `json.dumps`), JSON in prod
 - Commit messages: `phase(scope): what changed`
 - Every eval run writes a timestamped `results.json`. Never overwrite. The history is the story.
 
