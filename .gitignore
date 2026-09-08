@@ -32,3 +32,6 @@ evals/datasets/
 evals/results/
 *.wav
 *.mp3
+vidur.db
+rag/data/ncert/*.pdf
+rag/data/chunks.json

@@ -1,6 +1,9 @@
-# Phase 2 — `feat/tools-and-rag`
+# Phase 2 — `feat/tools-and-baseline-rag`
 
+**Status:** ✅ done
 **Goal:** Give the agent a brain. Provider adapter layer locked in, three tools wired, NCERT content in Qdrant, every turn traced in Langfuse. Phase 1 must be merged and talking before this starts.
+
+> Note: 2.9 (LangGraph corrective-RAG) was deliberately deferred to Phase 3. Phase 2 ships naive top-k only so Phase 3 has a real baseline to beat.
 
 ---
 
@@ -55,12 +58,9 @@
 - Returns top-k `Chunk(text, source, score)` Pydantic objects
 - No LangGraph corrective loop yet — straight retrieval only
 
-### 2.9 — LangGraph corrective-RAG graph
-- Files: `rag/graph.py`, `rag/nodes/retrieve.py`, `rag/nodes/grade.py`, `rag/nodes/rewrite.py`, `rag/nodes/generate.py`
-- `StateGraph`: retrieve → grade → branch (generate | rewrite → retrieve, max 2 retries)
-- Grader: LLM prompt that scores each chunk relevant/not
-- Hard cap: if graph exceeds 2500ms, return best chunks and set `rag_bailed_out: true`
-- Invoked once per `retrieve` tool call, never per turn
+### 2.9 — LangGraph corrective-RAG graph ⛔ deferred to Phase 3
+- Intentionally not built here. Naive top-k is the Phase 2 baseline.
+- See `phase_3.md` for full spec.
 
 ### 2.10 — Langfuse tracing
 - File: `agent/session.py` (add spans)

@@ -12,6 +12,13 @@ dependencies = [
     "structlog>=24.0",
     "pydantic-ai[google]>=0.0.14",
     "aiosqlite>=0.20",
+    "qdrant-client[fastembed]>=1.9",
+    "voyageai>=0.3",
+    "pypdf>=4.0",
+    "tiktoken>=0.7",
+    "langfuse>=2.0",
+    "fastapi>=0.111",
+    "uvicorn>=0.30",
 ]
 
 [tool.ruff]
