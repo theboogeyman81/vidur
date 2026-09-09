@@ -65,7 +65,7 @@ class _PydanticAIStream(LLMStream):
         t0 = time.perf_counter()
         result = await vidur_agent.run(
             user_text,
-            deps={"session_id": self._session_id},
+            deps={"session_id": self._session_id, "active_trace": self._active_trace},
         )
         llm_total_ms = round((time.perf_counter() - t0) * 1000, 1)
 

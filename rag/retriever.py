@@ -6,7 +6,7 @@ import voyageai
 from fastembed import SparseTextEmbedding
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
-from qdrant_client.models import SparseVector
+from qdrant_client.models import Fusion, FusionQuery, Prefetch, SparseVector
 
 COLLECTION = "ncert"
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
@@ -47,10 +47,10 @@ async def retrieve(query: str, top_k: int = 5) -> list[Chunk]:
     results = qc.query_points(
         collection_name=COLLECTION,
         prefetch=[
-            {"using": "dense", "query": dense_vec, "limit": top_k * 2},
-            {"using": "sparse", "query": sparse_vec, "limit": top_k * 2},
+            Prefetch(using="dense", query=dense_vec, limit=top_k * 2),
+            Prefetch(using="sparse", query=sparse_vec, limit=top_k * 2),
         ],
-        query={"fusion": "rrf"},
+        query=FusionQuery(fusion=Fusion.RRF),
         limit=top_k,
     )
 
