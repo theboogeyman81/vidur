@@ -16,9 +16,12 @@ dependencies = [
     "voyageai>=0.3",
     "pypdf>=4.0",
     "tiktoken>=0.7",
-    "langfuse>=2.0",
+    "langfuse>=2.0,<3.0",
     "fastapi>=0.111",
     "uvicorn>=0.30",
+    "langgraph>=0.2",
+    "ragas>=0.2",
+    "langchain-google-genai>=1.0",
 ]
 
 [tool.ruff]

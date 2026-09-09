@@ -28,8 +28,8 @@ env/
 Thumbs.db
 
 # Project
-evals/datasets/
-evals/results/
+*_draft.jsonl
+evals/datasets/rag_qa/__pycache__/
 *.wav
 *.mp3
 vidur.db
