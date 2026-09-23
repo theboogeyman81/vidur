@@ -37,3 +37,6 @@ vidur.db
 rag/data/ncert/*.pdf
 rag/data/chunks.json
 qdrant_storage/
+!evals/results/audio_demo/**/*.wav
+evals/results/audio/
+models/piper/
