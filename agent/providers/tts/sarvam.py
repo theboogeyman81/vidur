@@ -40,9 +40,12 @@ class SarvamTTS:
     """Eval harness TTS adapter — implements TTSProvider protocol."""
 
     name = "sarvam-bulbul"
+    # Non-streaming REST: TTFB == total (spec D5)
+    config = {"model": "bulbul:v3", "speaker": "kavya", "streaming": False}
 
     def __init__(self) -> None:
         self._key = os.environ["SARVAM_API_KEY"]
+        self._client: httpx.AsyncClient | None = None
 
     async def synthesize(self, text: str, lang: str = "hi-IN") -> TTSResult:
         t0 = time.perf_counter()
@@ -51,21 +54,25 @@ class SarvamTTS:
         return TTSResult(audio=wav_bytes, time_to_first_byte_ms=elapsed, total_ms=elapsed)
 
     async def _http_synthesize(self, text: str, lang: str) -> bytes:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.post(
-                _SARVAM_TTS_URL,
-                headers={
-                    "api-subscription-key": self._key,
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "inputs": [text[:500]],
-                    "target_language_code": lang,
-                    "speaker": "kavya",
-                    "model": "bulbul:v3",
-                    "enable_preprocessing": True,
-                },
-            )
+        # One persistent client so per-call TLS handshakes don't land in the timing (spec D8)
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=15)
+        r = await self._client.post(
+            _SARVAM_TTS_URL,
+            headers={
+                "api-subscription-key": self._key,
+                "Content-Type": "application/json",
+            },
+            json={
+                "inputs": [text[:500]],
+                "target_language_code": lang,
+                "speaker": self.config["speaker"],
+                "model": self.config["model"],
+                "enable_preprocessing": True,
+            },
+        )
+        if r.is_error:
+            _log.error("tts: Sarvam %d — %s", r.status_code, r.text[:500])
         r.raise_for_status()
         return base64.b64decode(r.json()["audios"][0])
 
