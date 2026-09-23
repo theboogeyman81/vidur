@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-07
 Current phase: Phase 3 — `feat/corrective-rag`
-Spec: `specs/phase_2_spec_2.7-2.12.md` (Phase 2 complete)
+Spec: `.claude/specs/phase_3_spec.md` (Phase 2 complete, see `specs/phase_2_spec_2.7-2.12.md`)
 
 Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skipped/deferred
 

@@ -1,77 +1,108 @@
-# Phase 5 — `feat/piper-voice`
+# Phase 5 — `feat/tts-eval`
 
-**Goal:** Fine-tune a Piper TTS voice on Indian-accented English, export it as ONNX, wrap it as a TTSProvider, and add it to the leaderboard. If fine-tuning stalls past 6 hours, fall back to F5-TTS zero-shot cloning — label it honestly.
+**Goal:** Benchmark four TTS engines on code-mixed sentences. Save audio artifacts. Measure TTFB. Add barge-in success rate to the live agent. Real numbers committed to results.json.
 
 ---
 
 ## Features
 
-### 5.1 — Training data prep
-- File: `training/piper_finetune.ipynb` (Colab notebook)
-- Collect ~1–2 hours of Indian-accented English speech + transcripts
-- Sources: Common Voice `en-IN`, curated YouTube clips (short segments), or self-recorded
-- Format: LJSpeech structure — `wavs/` folder + `metadata.csv` (`filename|transcript`)
-- Resample to 22050Hz mono
-- Document source and license in the notebook
+### 4.1 — TTS eval dataset
+- Directory: `evals/datasets/tts_codemix/`
+- ~50 sentences, varying in:
+  - Code-mix ratio (pure Hindi → pure English → heavy Hinglish)
+  - Length (short 5-word, medium 15-word, long 30-word)
+  - Named entities: English technical terms embedded in Hindi sentences
+- File: `sentences.jsonl`:
+  `{"id": "s001", "text": "Aaj hum Article 370 ke baare mein padh rahe hain", "lang": "hi-en"}`
+- No audio input needed — TTS is synthesis only
 
-### 5.2 — Piper fine-tune (Colab)
-- Start from a pre-trained Piper checkpoint (English base)
-- Fine-tune for ~2000 steps — enough to shift accent without full training cost
-- Monitor: listen to checkpoint audio every 500 steps; stop when accent is clearly Indian
-- Export final checkpoint to ONNX: `vidur_en.onnx` + `vidur_en.onnx.json`
-- Save to Google Drive, document Drive path in notebook
+### 4.2 — Cartesia Sonic adapter (full impl)
+- File: `agent/providers/tts/cartesia.py`
+- Complete the stub from Phase 2
+- Use Cartesia's streaming Python client
+- Capture first audio chunk timestamp for `time_to_first_byte_ms`
+- Return `TTSResult(audio, time_to_first_byte_ms, total_ms)`
 
-### 5.3 — Fallback: F5-TTS zero-shot cloning
-- If fine-tuning stalls past 6 hours wall-clock or quality is clearly unusable:
-  - Switch to F5-TTS with a 10-second reference clip of Indian-accented English
-  - Zero-shot voice cloning — no training required
-  - Label the result as `piper-f5-cloned`, not `piper-finetuned`, in all results
-  - Document the switch and reason in `docs/FINDINGS.md`
+### 4.3 — ElevenLabs Flash adapter (full impl)
+- File: `agent/providers/tts/elevenlabs.py`
+- Use ElevenLabs Flash model (lowest latency tier)
+- Streaming: capture TTFB from first chunk
+- Return `TTSResult`
 
-### 5.4 — ONNX model packaging
-- Store model files at: `training/models/vidur_en.onnx` and `vidur_en.onnx.json`
-- Do not commit to git if >50MB — add to `.gitignore`, document download instructions in README
-- If using F5-TTS fallback, store the reference clip at `training/models/reference_clip.wav`
-
-### 5.5 — Piper TTSProvider update
+### 4.4 — Piper adapter (full impl)
 - File: `agent/providers/tts/piper.py`
-- Update to load `vidur_en.onnx` instead of the generic pre-trained voice
-- Engine name in registry: `piper-finetuned` (or `piper-f5-cloned` if fallback)
-- No other changes — the interface stays the same
+- Run Piper locally via subprocess (ONNX model)
+- Use a pre-trained English or Hindi voice — fine-tuned voice comes in Phase 6
+- TTFB = time to first byte from subprocess stdout
+- Return `TTSResult`
 
-### 5.6 — Add fine-tuned voice to TTS leaderboard
-- Re-run `evals/run_tts_eval.py` with the updated Piper adapter
-- Append results to a new timestamped `results/tts_{timestamp}.json`
-- Update `docs/FINDINGS.md` table to include the fine-tuned row
-- Side-by-side: same sentence through Sarvam Bulbul vs fine-tuned Piper — note which sounds more natural
+### 4.5 — TTS eval runner
+- File: `evals/run_tts_eval.py`
+- Load `sentences.jsonl`, iterate sentences
+- For each sentence × each engine: call `provider.synthesize(text, lang)`
+- Save audio artifact: `evals/results/audio/tts_{engine}_{sentence_id}.wav`
+- Write timestamped `evals/results/tts_{timestamp}.json`:
+  ```json
+  {
+    "engine": "sarvam",
+    "avg_ttfb_ms": 210,
+    "p95_ttfb_ms": 380,
+    "avg_total_ms": 1100,
+    "p95_total_ms": 1800,
+    "per_sentence": [...]
+  }
+  ```
+- CLI: `uv run python -m evals.run_tts_eval --engines sarvam,cartesia,elevenlabs,piper`
 
-### 5.7 — Eval: does the fine-tuned voice handle code-mixing?
-- Run the full `tts_codemix` sentence set through the fine-tuned voice
-- Note: Piper is English-only — Hindi words will be mispronounced. Document this.
-- This is expected and worth recording: the finding is "fine-tuned English voice degrades on Devanagari tokens"
-- Add this finding explicitly to `docs/FINDINGS.md`
+### 4.6 — Audio artifact storage
+- Save WAV files under `evals/results/audio/`
+- Filename pattern: `tts_{engine}_{sentence_id}_{timestamp}.wav`
+- These are the files the dashboard's A/B audio player will serve
+- Do not commit audio files to git — add `evals/results/audio/` to `.gitignore`
+
+### 4.7 — Barge-in success measurement (live agent)
+- File: `agent/session.py`
+- When a barge-in occurs, record: `barge_in_detected_ms` (when VAD fired during TTS), `tts_cancelled_ms` (when audio stream stopped)
+- `barge_in_latency_ms = tts_cancelled_ms - barge_in_detected_ms`
+- Target: under 300ms. Log to Langfuse span.
+- Add `barge_in_success: bool` — true if TTS stopped before the user finished their next utterance
+
+### 4.8 — Results summary printer
+- After eval completes, print markdown table to stdout:
+  ```
+  | Engine     | p50 TTFB | p95 TTFB | p50 total | p95 total |
+  |------------|----------|----------|-----------|-----------|
+  | sarvam     | 190      | 360      | 980       | 1600      |
+  | cartesia   | 140      | 280      | 820       | 1400      |
+  | elevenlabs | 220      | 410      | 1100      | 1900      |
+  | piper      | 80       | 150      | 600       | 1100      |
+  ```
+- Commit table to `docs/FINDINGS.md` under "TTS Results"
 
 ---
 
 ## Done when
 
-- A Piper ONNX model exists (fine-tuned OR F5-TTS fallback, clearly labelled)
-- `piper.py` loads the new model; `uv run python -m evals.run_tts_eval --engines piper` runs
-- New results row added to `docs/FINDINGS.md` leaderboard
-- Code-mixing degradation documented honestly in FINDINGS.md
+- `sentences.jsonl` exists with at least 50 code-mixed sentences
+- `uv run python -m evals.run_tts_eval --engines sarvam,cartesia,elevenlabs,piper` completes
+- Audio artifacts saved for every engine × sentence pair
+- `results/tts_{timestamp}.json` committed with TTFB p50/p95 for all four engines
+- Barge-in latency logged per turn in live agent
 
 ---
 
 ## Files created this phase
 
 ```
-training/
-  piper_finetune.ipynb    (updated with training run results)
-  models/
-    vidur_en.onnx         (or reference_clip.wav for F5 fallback)
-    vidur_en.onnx.json
+evals/
+  datasets/tts_codemix/
+    sentences.jsonl
+  results/
+    tts_{timestamp}.json
+    audio/          (.gitignored)
+  run_tts_eval.py
 agent/providers/tts/
-  piper.py                (updated to use fine-tuned model)
-docs/
-  FINDINGS.md             (updated with fine-tune results)
+  cartesia.py     (completed)
+  elevenlabs.py   (completed)
+  piper.py        (completed)
 ```
