@@ -98,20 +98,21 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skippe
 ---
 
 ## Phase 5 — `feat/tts-eval`
-**Branch:** `feat/tts-eval`
-**Status:** not started
-**Blocked by:** Phase 4 merged
+**Branch:** `feat/tts-eval` (stacked on `feat/stt-eval` — rebase onto `main` once Phase 4 merges)
+**Status:** [~] in progress — code done, keys + full run + live sessions outstanding
+**Spec:** `specs/phase_5_spec.md`
 
-- [ ] 5.1 TTS eval dataset (~50 code-mixed sentences)
-- [ ] 5.2 Cartesia Sonic adapter (full impl)
-- [ ] 5.3 ElevenLabs Flash adapter (full impl)
-- [ ] 5.4 Piper adapter (full impl)
-- [ ] 5.5 TTS eval runner (`run_tts_eval.py`)
-- [ ] 5.6 Audio artifact storage
-- [ ] 5.7 Barge-in success measurement (live agent)
-- [ ] 5.8 Results summary (TTFB p50/p95 table)
+- [~] 5.1 TTS eval dataset — 50 sentences + 15 roman, `validate.py` passes; needs a hand-edit pass
+- [x] 5.2 Cartesia Sonic adapter — sonic-3.6, chunked HTTP; untested live, needs `CARTESIA_API_KEY` + voice id
+- [x] 5.3 ElevenLabs Flash adapter — flash v2.5, pcm_24000; untested live, needs key + voice id
+- [x] 5.4 Piper adapter — `piper-tts`, `hi_IN-pratham-medium`; smoke-tested (~80ms TTFB)
+- [x] 5.5 TTS eval runner — synth pass + round-trip judge pass; smoke-tested with sarvam + piper
+- [x] 5.6 Audio artifact storage — `results/audio/{ts}/` gitignored, `export_tts_demo.py` → `audio_demo/`
+- [~] 5.7 Barge-in measurement — `BargeInTracker` wired + tested, `report_barge_in.py`; D12 sessions not run
+- [ ] 5.8 Results summary — printer done; full run, listening pass, FINDINGS numbers outstanding
+- [x] 5.9 Sarvam live-path fix — audio pushed per chunk; first frame now matches logged TTFB
 
-**Done when:** `run_tts_eval.py` completes across 4 engines. Audio files saved. TTFB p50/p95 table committed. Barge-in latency logged per turn.
+**Done when:** `run_tts_eval.py` completes across 4 engines. Audio files saved. TTFB p50/p95 + round-trip WER committed. Barge-in latency logged per turn, D12 tradeoff in FINDINGS.
 
 ---
 
@@ -176,8 +177,8 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skippe
 | 2 — tools-and-baseline-rag | 12 | 11 | 1 (2.9→Ph3) | ✅ done |
 | 3 — corrective-rag | 11 | 8 | 0 | in progress ⏸ (eval numbers pending) |
 | 4 — stt-eval | 9 | 6 | 0 | in progress |
-| 5 — tts-eval | 8 | 0 | 0 | not started |
+| 5 — tts-eval | 9 | 6 | 0 | in progress |
 | 6 — piper-voice | 7 | 0 | 0 | not started |
 | 7 — dashboard | 9 | 0 | 0 | not started |
 | 8 — ship | 7 | 0 | 0 | not started |
-| **Total** | **72** | **28** | **2** | |
+| **Total** | **73** | **34** | **2** | |
