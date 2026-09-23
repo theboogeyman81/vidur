@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import base64
-import io
 import logging
 import os
 import time
 import uuid
-import wave
 
 import httpx
 from livekit.agents import DEFAULT_API_CONNECT_OPTIONS, APIConnectOptions
@@ -14,6 +12,7 @@ from livekit.agents import tts as lk_tts
 from livekit.agents.tts.tts import AudioEmitter
 
 from agent.providers.base import TTSResult
+from agent.providers.tts._wav import wav_to_pcm16
 
 _log = logging.getLogger(__name__)
 
@@ -94,36 +93,31 @@ class _SarvamChunkedStream(lk_tts.ChunkedStream):
 
     async def _run(self, output_emitter: AudioEmitter) -> None:
         chunks = _split_sentences(self._input_text)
+        client = self._tts.client
         t0 = time.perf_counter()
-        pcm_parts: list[tuple[int, int, bytes]] = []  # (sample_rate, channels, pcm)
+        initialized = False
 
         for chunk in chunks:
-            async with httpx.AsyncClient(timeout=15) as client:
-                r = await client.post(
-                    _SARVAM_TTS_URL,
-                    headers={
-                        "api-subscription-key": self._api_key,
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "inputs": [chunk],
-                        "target_language_code": self._lang,
-                        "speaker": "kavya",
-                        "model": "bulbul:v3",
-                        "enable_preprocessing": True,
-                    },
-                )
+            r = await client.post(
+                _SARVAM_TTS_URL,
+                headers={
+                    "api-subscription-key": self._api_key,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "inputs": [chunk],
+                    "target_language_code": self._lang,
+                    "speaker": "kavya",
+                    "model": "bulbul:v3",
+                    "enable_preprocessing": True,
+                },
+            )
             if r.is_error:
                 _log.error("tts: Sarvam %d — %s", r.status_code, r.text[:500])
                 r.raise_for_status()
-            wav_bytes = base64.b64decode(r.json()["audios"][0])
+            pcm, sr, nch = wav_to_pcm16(base64.b64decode(r.json()["audios"][0]))
 
-            with wave.open(io.BytesIO(wav_bytes)) as wf:
-                sr = wf.getframerate()
-                nch = wf.getnchannels()
-                pcm = wf.readframes(wf.getnframes())
-
-            if not pcm_parts:
+            if not initialized:
                 # first chunk — record TTFB and initialize emitter
                 self.ttfb_ms = (time.perf_counter() - t0) * 1000
                 self._tts.last_ttfb_ms = self.ttfb_ms  # propagate to parent for trace logging
@@ -133,10 +127,10 @@ class _SarvamChunkedStream(lk_tts.ChunkedStream):
                     num_channels=nch,
                     mime_type="audio/pcm",
                 )
+                initialized = True
 
-            pcm_parts.append((sr, nch, pcm))
-
-        for _, _, pcm in pcm_parts:
+            # Push as each chunk lands, so playback starts at TTFB rather than after the last
+            # chunk — otherwise the logged tts_ttfb_ms understates when audio starts (spec 5.9)
             output_emitter.push(pcm)
 
 
@@ -154,6 +148,14 @@ class SarvamLKTTS(lk_tts.TTS):
         self._key = os.environ["SARVAM_API_KEY"]
         self._lang = lang
         self.last_ttfb_ms: float = 0.0
+        self._client: httpx.AsyncClient | None = None
+
+    @property
+    def client(self) -> httpx.AsyncClient:
+        # One client per TTS instance: no TLS handshake per sentence chunk
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=15)
+        return self._client
 
     def synthesize(
         self, text: str, *, conn_options: APIConnectOptions = DEFAULT_API_CONNECT_OPTIONS
