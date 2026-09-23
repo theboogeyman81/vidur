@@ -35,3 +35,4 @@ evals/datasets/rag_qa/__pycache__/
 vidur.db
 rag/data/ncert/*.pdf
 rag/data/chunks.json
+qdrant_storage/
