@@ -25,7 +25,7 @@ class SarvamSTT(lk_stt.STT):
     """Sarvam Saarika v2 STT — LiveKit plugin + eval harness adapter."""
 
     name = "sarvam-saaras"
-    config = {"model": "saaras:v3", "language_code": "hi-IN"}
+    config = {"model": "saaras:v3", "language_code": "hi-IN", "mode": "transcribe"}
 
     def __init__(self) -> None:
         super().__init__(
@@ -91,7 +91,7 @@ class SarvamSTT(lk_stt.STT):
                 _SARVAM_STT_URL,
                 headers={"api-subscription-key": self._key},
                 files={"file": ("audio.wav", wav, "audio/wav")},
-                data={"model": "saaras:v3", "language_code": "hi-IN"},
+                data=self.config,
             )
 
         if r.is_error:
@@ -112,3 +112,14 @@ def _empty_event() -> lk_stt.SpeechEvent:
         request_id=str(uuid.uuid4()),
         alternatives=[lk_stt.SpeechData(language="hi-IN", text="", confidence=0.0)],
     )
+
+
+class SarvamCodemixSTT(SarvamSTT):
+    """Saaras v3 `codemix` mode — English words stay Latin, Hindi stays Devanagari.
+
+    Default `transcribe` mode writes English in Devanagari ("polity" → "पॉलिटी"). Eval-only
+    for now; flip the live default if the leaderboard says codemix wins.
+    """
+
+    name = "sarvam-saaras-codemix"
+    config = {"model": "saaras:v3", "language_code": "hi-IN", "mode": "codemix"}

@@ -13,7 +13,6 @@ from collections import Counter
 import soundfile as sf
 
 from evals.datasets.stt_hinglish.models import (
-    DATASET_DIR,
     MANIFEST,
     SAMPLE_RATE,
     ManifestRow,
@@ -42,7 +41,7 @@ def validate(manifest: pathlib.Path = MANIFEST) -> list[ManifestRow]:
             errors.append(f"{row.file}: duplicate manifest entry")
         seen.add(row.file)
 
-        wav = DATASET_DIR / row.file
+        wav = manifest.parent / row.file
         if not wav.exists():
             errors.append(f"{row.file}: missing on disk")
             continue

@@ -30,12 +30,20 @@ These fix gaps in `phases/phase_4.md`. Each has one tradeoff, and each has a pic
 | D2 | **Primary metric is WER/CER on the native-script text. A secondary `cer_roman` is computed after both sides go through the same Devanagari→Latin transliterator.** | `cer_roman` is lossy (schwa, loanword spelling) and is a diagnostic only. It exposes script-choice errors: when `wer` is high and `cer_roman` is low, the engine heard it right but wrote it in the "wrong" script. |
 | D3 | **Corpus-level WER, not the mean of per-clip WER.** Run `jiwer` over all refs and hyps of an engine at once. | Short clips stop dominating the number. Per-clip WER is still stored for drill-down. |
 | D4 | **Whisper is forced to `language="hi"`, not auto-detect.** | Auto-detect on Hinglish flips per clip between Hindi, Urdu script and translating to English, which produces noise rather than a comparison. Forced `hi` is the fair best case. Note it in FINDINGS. |
-| D5 | **Deepgram runs Nova-3 with `language=multi`.** phase_4.md says `language: hi` + `code_switching: true`, but `code_switching` isn't a Deepgram param as far as I know. Nova-3's `multi` mode is what does Hindi-English code-switching. **Verify against current Deepgram docs before coding.** | If `multi` underperforms, add `deepgram-hi` (`language=hi`) as a 5th registry entry rather than swapping silently. |
+| D5 | **Deepgram runs Nova-3 with `language=multi`.** phase_4.md says `language: hi` + `code_switching: true`, but `code_switching` isn't a Deepgram param as far as I know. Nova-3's `multi` mode is what does Hindi-English code-switching. **Verified 2026-09-23:** Hindi is in Nova-3's `multi` set. | If `multi` underperforms, add `deepgram-hi` (`language=hi`) as a 5th registry entry rather than swapping silently. |
 | D6 | **Deepgram uses raw `httpx` against `/v1/listen`, not the SDK. Google uses the `google-cloud-speech` SDK.** | This matches the Sarvam adapter style and saves a dependency. Google's REST needs OAuth token plumbing, so there the SDK is the smaller surface. |
 | D7 | **Calls are sequential, one clip at a time, with one discarded warm-up call per engine.** | The run is slower (~10 min total), but concurrency would contaminate latency, and latency is half the table. |
 | D8 | **A failed call counts as an empty hypothesis (WER 1.0 for that clip) and is also counted in `failures`.** | This is honest. Dropping failures would flatter flaky engines. |
 | D9 | **TTS-synthesised clips are excluded from the headline number.** phase_4.md lists "synthesize with Sarvam TTS" as a source. That is Sarvam grading its own homework on studio-clean audio. | If used at all, tag them `source: "synth"` and report them as a separate row. |
 | D10 | **WAVs are committed to git** (~100 × 5s × 32 KB/s ≈ 16 MB). | The repo grows, but the eval is reproducible from a clean clone. Get consent from anyone whose voice is in there. |
+
+---
+
+## Build notes (2026-09-23)
+
+- **Google → Chirp 3** (Speech v2, `us` multi-region, `hi-IN`) instead of v1 `latest_short`. It needs `GOOGLE_CLOUD_PROJECT` in addition to the credentials.
+- **Added `sarvam-codemix`** (Saaras v3 `mode=codemix`). The default `transcribe` mode writes English in Devanagari. A 3-clip smoke test gave WER 0.48 for transcribe and 0.04 for codemix. The live agent still uses `transcribe`; switch it only if the full run agrees.
+- **Runner takes `--manifest`**, so smoke tests can use a scratch dataset. `validate()` resolves WAVs relative to the manifest.
 
 ---
 
