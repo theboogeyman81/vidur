@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import pathlib
 import time
 import uuid
@@ -20,6 +21,7 @@ from livekit.agents.llm import (
 from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS, APIConnectOptions
 from pydantic_ai.messages import ModelResponse, ToolCallPart
 
+from agent.barge_in import BargeInTracker
 from agent.providers.stt.sarvam import SarvamSTT
 from agent.providers.tts.sarvam import SarvamLKTTS
 from api.db import log_session, log_turn
@@ -34,6 +36,12 @@ except Exception:
 
 def _trace(**fields) -> None:
     log.info(json.dumps(fields))
+
+
+def _turn_handling() -> dict:
+    """VIDUR_MIN_INTERRUPTION_S overrides LiveKit's 0.5s default (spec D12); unset = default."""
+    raw = os.getenv("VIDUR_MIN_INTERRUPTION_S", "").strip()
+    return {"turn_handling": {"interruption": {"min_duration": float(raw)}}} if raw else {}
 
 
 class _PydanticAIStream(LLMStream):
@@ -137,6 +145,9 @@ async def run_session(ctx: JobContext, *, vad: lk_vad.VAD) -> None:
     _active_trace: dict = {}
     _llm_metrics: dict = {}
     _turn_start: dict[str, float] = {"t": 0.0}
+    # Set when the agent paused for a barge-in; the turn row waits for the outcome
+    _pending_log: dict[str, bool] = {"v": False}
+    barge = BargeInTracker()
 
     session = AgentSession(
         stt=stt,
@@ -147,12 +158,55 @@ async def run_session(ctx: JobContext, *, vad: lk_vad.VAD) -> None:
         ),
         tts=tts,
         vad=vad,
+        **_turn_handling(),
     )
+    interruption_cfg = {
+        k: session.options.interruption.get(k) for k in ("mode", "min_duration", "enabled")
+    }
+    _trace(event="session.interruption_config", **interruption_cfg)
+
+    def _log_turn() -> None:
+        elapsed = (time.perf_counter() - _turn_start["t"]) * 1000
+        llm_total = _llm_metrics.pop("llm_total_ms", 0.0)
+        tools = _llm_metrics.pop("tools_called", [])
+        barge_in = barge.pop_turn_metrics()
+        turn_data = {
+            "stt_ms": round(stt.last_latency_ms, 1),
+            "stt_engine": stt.name,
+            "tts_ttfb_ms": round(tts.last_ttfb_ms, 1),
+            "tts_engine": tts.name,
+            "llm_first_token_ms": llm_total,
+            "llm_total_ms": llm_total,
+            "tools_called": tools,
+            "e2e_ms": round(elapsed + stt.last_latency_ms, 1),
+            **barge_in.model_dump(exclude={"episodes"}),
+            "barge_in_episodes": barge_in.episodes,
+            "interruption_config": interruption_cfg,
+        }
+        trace = _active_trace.get("ref")
+        if trace:
+            trace.span(
+                name="tts",
+                output={"ttfb_ms": turn_data["tts_ttfb_ms"], "engine": tts.name},
+            )
+            if barge_in.episodes:
+                trace.span(
+                    name="barge_in",
+                    output={**barge_in.model_dump(), "interruption_config": interruption_cfg},
+                )
+            trace.update(output=turn_data)
+        _trace(event="turn", **turn_data)
+        asyncio.create_task(log_turn(ctx.room.name, turn_data))
 
     @session.on("user_input_transcribed")
     def _on_transcribed(ev) -> None:
         if not ev.is_final:
             return
+        # A paused agent + a real user transcript = a real interruption; close the old turn first
+        barge.on_user_turn(ev.created_at)
+        if _pending_log["v"]:
+            _pending_log["v"] = False
+            _log_turn()
         _turn_start["t"] = time.perf_counter()
         trace = _lf.trace(name="turn", session_id=ctx.room.name) if _lf else None
         _active_trace["ref"] = trace
@@ -167,32 +221,27 @@ async def run_session(ctx: JobContext, *, vad: lk_vad.VAD) -> None:
             )
         _trace(event="turn.stt", transcript=ev.transcript, stt_ms=round(stt.last_latency_ms, 1))
 
+    @session.on("user_state_changed")
+    def _on_user_state(ev) -> None:
+        barge.on_user_state(ev.old_state, ev.new_state, ev.created_at)
+
+    @session.on("agent_false_interruption")
+    def _on_false_interruption(ev) -> None:
+        barge.on_false_interruption(ev.resumed, ev.created_at)
+        if ev.resumed:
+            _pending_log["v"] = False  # agent is speaking again; the turn logs when it ends
+        elif _pending_log["v"]:
+            _pending_log["v"] = False
+            _log_turn()
+
     @session.on("agent_state_changed")
     def _on_state_changed(ev) -> None:
+        barge.on_agent_state(ev.old_state, ev.new_state, ev.created_at)
         if ev.old_state == "speaking" and ev.new_state in ("listening", "idle"):
-            elapsed = (time.perf_counter() - _turn_start["t"]) * 1000
-            llm_total = _llm_metrics.pop("llm_total_ms", 0.0)
-            tools = _llm_metrics.pop("tools_called", [])
-            turn_data = {
-                "stt_ms": round(stt.last_latency_ms, 1),
-                "stt_engine": stt.name,
-                "tts_ttfb_ms": round(tts.last_ttfb_ms, 1),
-                "tts_engine": tts.name,
-                "llm_first_token_ms": llm_total,
-                "llm_total_ms": llm_total,
-                "tools_called": tools,
-                "e2e_ms": round(elapsed + stt.last_latency_ms, 1),
-                "interrupted": False,
-            }
-            trace = _active_trace.get("ref")
-            if trace:
-                trace.span(
-                    name="tts",
-                    output={"ttfb_ms": turn_data["tts_ttfb_ms"], "engine": tts.name},
-                )
-                trace.update(output=turn_data)
-            _trace(event="turn", **turn_data)
-            asyncio.create_task(log_turn(ctx.room.name, turn_data))
+            if barge.awaiting_user_turn:
+                _pending_log["v"] = True
+                return
+            _log_turn()
 
     system_prompt = (pathlib.Path(__file__).parent / "prompts" / "tutor_v1.md").read_text()
 
