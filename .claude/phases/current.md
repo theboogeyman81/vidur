@@ -1,7 +1,7 @@
 # Vidur — Phase & Feature Tracker
 
-Last updated: 2026-09-07
-Current phase: Phase 3 — `feat/corrective-rag`
+Last updated: 2026-09-23
+Current phase: Phase 3 — `feat/corrective-rag` (in progress, code merged — eval numbers outstanding)
 Spec: `.claude/specs/phase_3_spec.md` (Phase 2 complete, see `specs/phase_2_spec_2.7-2.12.md`)
 
 Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skipped/deferred
@@ -51,23 +51,30 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skippe
 ---
 
 ## Phase 3 — `feat/corrective-rag`
-**Branch:** `feat/corrective-rag`
-**Status:** not started
+**Branch:** `feat/corrective-rag` (merged to main via PR #3 — code only, eval numbers still outstanding)
+**Status:** [~] in progress
 **Blocked by:** Phase 2 merged
 
-- [ ] 3.1 RAG eval dataset — ~50 question + ground-truth-chunk pairs (`evals/datasets/rag_qa/`)
-- [ ] 3.2 `run_rag_eval.py` baseline run — Ragas against naive top-k, commit `results_baseline.json`
-- [ ] 3.3 LangGraph corrective-RAG graph (`rag/graph.py`)
-- [ ] 3.4 Node: retrieve (`rag/nodes/retrieve.py`)
-- [ ] 3.5 Node: grade (`rag/nodes/grade.py`) — LLM scores each chunk relevant/not
-- [ ] 3.6 Node: rewrite (`rag/nodes/rewrite.py`) — reformulate query, loop back (max 2)
-- [ ] 3.7 Node: generate (`rag/nodes/generate.py`) — compose grounded answer
-- [ ] 3.8 Bail-out logic — if graph > 2500ms, return best chunks, log `rag_bailed_out: true`
-- [ ] 3.9 Wire graph into `retrieve` tool (replaces naive call)
-- [ ] 3.10 `run_rag_eval.py` corrective run — Ragas against graph, commit `results_corrective.json`
-- [ ] 3.11 Langfuse RAG spans — `rag_total_ms`, `rag_rewrites`, `chunks_retrieved`, `chunks_passed_grading`
+- [ ] 3.1 RAG eval dataset — ~50 question + ground-truth-chunk pairs (`evals/datasets/rag_qa/`) — only `generate_dataset.py` exists, no `dataset.jsonl` yet
+- [ ] 3.2 `run_rag_eval.py` baseline run — Ragas against naive top-k, commit `results_baseline.json` — blocked on 3.1
+- [x] 3.3 LangGraph corrective-RAG graph (`rag/graph.py`) — `StateGraph` w/ conditional edge, `MemorySaver` checkpointer
+- [x] 3.4 Node: retrieve (`rag/nodes/retrieve.py`)
+- [x] 3.5 Node: grade (`rag/nodes/grade.py`) — LLM scores each chunk relevant/not
+- [x] 3.6 Node: rewrite (`rag/nodes/rewrite.py`) — reformulate query, loop back (max 2)
+- [x] 3.7 Node: generate (`rag/nodes/generate.py`) — compose grounded answer
+- [x] 3.8 Bail-out logic — two-layer: pre-call check at 2400ms in `retrieve_node`, post-graph `asyncio.wait_for(timeout=2.5)` in `run_graph()`, sets `bailed_out: true`
+- [x] 3.9 Wire graph into `retrieve` tool (replaces naive call) — `agent/tools/retrieve.py` calls `run_graph()`
+- [ ] 3.10 `run_rag_eval.py` corrective run — Ragas against graph, commit `results_corrective.json` — blocked on 3.1/3.2
+- [x] 3.11 Langfuse RAG spans — single `rag` span per tool call logs `rag_total_ms`, `rag_rewrites`, `rag_bailed_out`, `chunks_retrieved`, `chunks_passed_grading` (node-level spans not added — spec marks these optional)
 
 **Done when:** Two `results.json` files exist — baseline vs corrective. Ragas numbers show the delta (positive or honest negative). Graph bails at 2500ms and logs it.
+
+**Remaining blockers (as of 2026-09-23):**
+- Qdrant now running locally via Docker, but only 1 NCERT chapter ingested (`jess402.pdf`, 24 chunks) — too thin for a ~50-question eval set, need 2–3 more chapters
+- Voyage AI account has no payment method → 3 RPM / 10K TPM rate limit; either add a card (free tier still applies) or switch embeddings to local `fastembed` (deferred, discussed, not yet done)
+- 3.1/3.2/3.10 need the above resolved before the eval can run
+
+**Decision:** parking this here and moving to Phase 4 (`feat/stt-eval`) next; will come back and finish 3.1/3.2/3.10 after Phase 5.
 
 ---
 
@@ -166,10 +173,10 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skippe
 |-------|----------|------|---------|--------|
 | 1 — voice-loop | 10 | 9 | 1 | ✅ done |
 | 2 — tools-and-baseline-rag | 12 | 11 | 1 (2.9→Ph3) | ✅ done |
-| 3 — corrective-rag | 11 | 0 | 0 | not started |
+| 3 — corrective-rag | 11 | 8 | 0 | in progress ⏸ (eval numbers pending) |
 | 4 — stt-eval | 8 | 0 | 0 | not started |
 | 5 — tts-eval | 8 | 0 | 0 | not started |
 | 6 — piper-voice | 7 | 0 | 0 | not started |
 | 7 — dashboard | 9 | 0 | 0 | not started |
 | 8 — ship | 7 | 0 | 0 | not started |
-| **Total** | **72** | **20** | **2** | |
+| **Total** | **72** | **28** | **2** | |
