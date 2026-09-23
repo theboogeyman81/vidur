@@ -1,108 +1,108 @@
-# Phase 7 — `chore/ship`
+# Phase 7 — `feat/dashboard`
 
-**Goal:** Everything demoable, documented, and deployed. FINDINGS.md with real numbers. README with an architecture diagram. Loom script written. Ship it.
+**Goal:** A React frontend with two pages — a live session view and an evals leaderboard. Must show real data from the API, not mocks. The evals page is the centrepiece.
 
 ---
 
 ## Features
 
-### 7.1 — FINDINGS.md writeup
-- File: `docs/FINDINGS.md`
-- Sections:
-  - **STT Leaderboard** — final WER/CER table, which engine won and why
-  - **TTS Leaderboard** — final TTFB table, which engine won and why
-  - **Latency Breakdown** — where the e2e budget goes (p50 and p95 per segment), did we hit the 1200ms p95 target?
-  - **Surprises** — things that didn't behave as expected (e.g. Whisper quality vs latency tradeoff, Sarvam on pure English, code-mix degradation on fine-tuned Piper)
-  - **What I'd do with more time** — honest, brief
-- No fluff. Numbers + one-sentence interpretation per finding.
+### 6.1 — FastAPI evals endpoint
+- File: `api/routes/evals.py`
+- `GET /evals/stt` — returns latest STT results.json parsed into a response model
+- `GET /evals/tts` — returns latest TTS results.json
+- `GET /evals/tts/audio/{engine}/{sentence_id}` — serves the saved WAV file
+- Response models: Pydantic, typed. No raw dicts.
+- Register routes in `api/main.py`
 
-### 7.2 — README
-- File: `README.md`
-- Architecture diagram (Mermaid or ASCII — either works, must render on GitHub)
-- What the project is (two sentences)
-- How to run it locally: `cp .env.example .env`, fill keys, `make dev`
-- How to run the evals: `make eval-stt`, `make eval-tts`
-- Link to FINDINGS.md
-- Link to the live demo (Fly.io + Vercel URLs)
-- No tutorial prose, no wall of text
+### 6.2 — FastAPI sessions/traces endpoint
+- File: `api/routes/traces.py`
+- `GET /sessions` — list recent sessions from SQLite
+- `GET /sessions/{id}/turns` — return all turn traces for a session
+- Turn trace includes all logged fields: `stt_ms`, `llm_first_token_ms`, `tts_ttfb_ms`, `e2e_ms`, `tools_called[]`, etc.
 
-### 7.3 — Makefile targets (final)
-- File: `Makefile`
-- `make dev` — start agent + API + web in parallel (use `concurrently` or `foreman`)
-- `make dev-agent` — agent worker only
-- `make dev-api` — FastAPI only
-- `make dev-web` — Vite only
-- `make eval-stt` — run STT eval across all engines
-- `make eval-tts` — run TTS eval across all engines
-- `make lint` — ruff check
-- `make deploy` — Fly.io deploy (agent + API) + Vercel deploy (web)
+### 6.3 — Vite + React + Tailwind project setup
+- Directory: `web/`
+- `vite.config.ts`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.js`
+- Proxy `/api` to FastAPI in dev (`vite.config.ts` server.proxy)
+- Two routes: `/session` and `/evals`
+- No auth, no router guards — this is a demo app
 
-### 7.4 — Deploy: Fly.io (agent + API)
-- `fly.toml` already exists from Phase 1 — update if needed
-- Confirm: agent worker and FastAPI run in the same Fly app (two processes) or separate apps
-- Set all secrets via `fly secrets set KEY=value` — document which secrets in README
-- Health check: `GET /health` returns 200
+### 6.4 — Session page (live voice UI)
+- File: `web/src/pages/Session.tsx`
+- "Join Session" button → calls `GET /token` → connects to LiveKit room via LiveKit JS SDK
+- Shows live transcript as turns complete (polling `GET /sessions/{id}/turns` every 2s)
+- Shows tool calls that fired: small badge per turn (e.g. "retrieve", "quiz")
+- Shows per-turn latency: `e2e_ms` displayed next to each turn
+- Barge-in indicator: turn row highlighted if `interrupted: true`
+- No streaming partial transcripts — wait for full turn
 
-### 7.5 — Deploy: Vercel (frontend)
-- `vercel.json` config
-- Set `VITE_API_URL` env var in Vercel dashboard pointing to Fly.io FastAPI URL
-- Confirm the A/B audio player and leaderboard load against the deployed API
+### 6.5 — Evals page — STT leaderboard
+- File: `web/src/pages/Evals.tsx`
+- Table: Engine | WER | CER | p50 latency | p95 latency
+- Sorted by WER ascending by default
+- Each row expandable: shows per-clip WER breakdown
+- Data from `GET /evals/stt`
 
-### 7.6 — .env.example (final)
-- Update `.env.example` with every key used across all phases:
-  - `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
-  - `SARVAM_API_KEY`
-  - `GEMINI_API_KEY`
-  - `DEEPGRAM_API_KEY`
-  - `GOOGLE_APPLICATION_CREDENTIALS`
-  - `CARTESIA_API_KEY`
-  - `ELEVENLABS_API_KEY`
-  - `VOYAGE_API_KEY`
-  - `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`
-  - `STT_ENGINE`, `TTS_ENGINE` (with defaults noted)
+### 6.6 — Evals page — TTS leaderboard
+- Same page (`Evals.tsx`), tabbed or sectioned below STT
+- Table: Engine | p50 TTFB | p95 TTFB | p50 total | p95 total
+- Data from `GET /evals/tts`
 
-### 7.7 — Loom script
-- File: `docs/loom_script.md`
-- 6-minute script, timed per section:
-  - **0:00–1:00** — live Hinglish conversation with the tutor, including one interruption
-  - **1:00–2:00** — trigger a tool call mid-conversation (quiz or retrieve), show it in the Langfuse trace
-  - **2:00–3:30** — STT leaderboard: walk through the WER table, point out the winner and the surprise
-  - **3:30–5:00** — A/B TTS: play the same sentence through two engines, the one that's wrong is audible
-  - **5:00–6:00** — latency waterfall for a real turn, show where the time goes, note if 1200ms was hit
-- Write the script as if talking, not reading
+### 6.7 — Evals page — A/B audio player
+- Same page, below the TTS table
+- Sentence selector: pick from `sentences.jsonl` list
+- Two audio players side by side: Engine A vs Engine B
+- Both load from `GET /evals/tts/audio/{engine}/{sentence_id}`
+- Play buttons are independent; user listens and compares
+- This is the centrepiece of the demo — make it obvious and easy to use
 
-### 7.8 — Final smoke test checklist
-- [ ] Agent connects to LiveKit room on Fly.io
-- [ ] Barge-in cancels TTS within 300ms
-- [ ] Tool call fires and appears in Langfuse
-- [ ] RAG returns relevant NCERT content for a curriculum question
-- [ ] STT eval runs end-to-end with no crashes
-- [ ] TTS eval produces audio files for all four engines
-- [ ] Dashboard loads on Vercel, leaderboard shows real numbers
-- [ ] A/B audio player plays two engines for the same sentence
-- [ ] Latency waterfall renders for a real session
+### 6.8 — Evals page — latency waterfall
+- Same page, separate section
+- Pick a session from a dropdown
+- Render a horizontal stacked bar per turn: `stt_ms` | `llm_ms` | `tts_ttfb_ms`
+- Each segment a different colour, labelled
+- Shows where the latency budget goes visually
+- Data from `GET /sessions/{id}/turns`
+
+### 6.9 — CORS + API wiring
+- File: `api/main.py`
+- Add `CORSMiddleware` allowing `localhost:5173` and the Vercel production URL
+- All frontend fetches go through `/api` proxy in dev, direct URL in prod
 
 ---
 
 ## Done when
 
-- All five Loom demo moments are demoable without rehearsal failures
-- `README.md` is clear enough for someone who wasn't there to run the project
-- `docs/FINDINGS.md` has real numbers, not placeholders
-- Live deploy is stable (not just working locally)
-- Every secret is documented in `.env.example`
+- `make dev-web` starts Vite at `localhost:5173`, `make dev-api` starts FastAPI at `localhost:8000`
+- Session page connects to a LiveKit room and shows turns with latency badges
+- Evals page shows STT and TTS leaderboard tables with real numbers from results.json
+- A/B audio player works: pick a sentence, hear two engines, compare
+- Latency waterfall renders for at least one real session
 
 ---
 
 ## Files created this phase
 
 ```
-README.md
-docs/
-  FINDINGS.md       (completed with real numbers)
-  loom_script.md
-Makefile             (finalized)
-vercel.json
-fly.toml             (updated if needed)
-.env.example         (finalized)
+web/
+  vite.config.ts
+  tsconfig.json
+  tailwind.config.ts
+  postcss.config.js
+  index.html
+  src/
+    main.tsx
+    App.tsx
+    pages/
+      Session.tsx
+      Evals.tsx
+    components/
+      AudioPlayer.tsx
+      LatencyWaterfall.tsx
+      LeaderboardTable.tsx
+api/
+  routes/
+    evals.py
+    traces.py
+  main.py       (updated: CORS, new routes)
 ```
