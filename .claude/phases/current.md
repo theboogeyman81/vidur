@@ -1,8 +1,8 @@
 # Vidur — Phase & Feature Tracker
 
 Last updated: 2026-09-23
-Current phase: Phase 3 — `feat/corrective-rag` (in progress, code merged — eval numbers outstanding)
-Spec: `.claude/specs/phase_3_spec.md` (Phase 2 complete, see `specs/phase_2_spec_2.7-2.12.md`)
+Current phase: Phase 4 — `feat/stt-eval` (in progress; Phase 3 parked with eval numbers outstanding)
+Spec: `.claude/specs/phase_4_spec.md`
 
 Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skipped/deferred
 
@@ -80,17 +80,18 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skippe
 
 ## Phase 4 — `feat/stt-eval`
 **Branch:** `feat/stt-eval`
-**Status:** not started
-**Blocked by:** Phase 3 merged
+**Status:** [~] in progress — code done, dataset + full run outstanding
+**Spec:** `specs/phase_4_spec.md`
 
-- [ ] 4.1 STT eval dataset (50–100 Hinglish clips + ground-truth transcripts)
-- [ ] 4.2 WER / CER metrics (`jiwer`)
-- [ ] 4.3 Deepgram Nova adapter (full impl)
-- [ ] 4.4 Whisper large-v3 adapter (full impl)
-- [ ] 4.5 Google STT adapter (full impl)
-- [ ] 4.6 STT eval runner (`run_stt_eval.py`)
-- [ ] 4.7 Latency metrics helper
-- [ ] 4.8 Results summary (WER/CER/p50/p95 table)
+- [~] 4.1 STT eval dataset — tooling done (`record.py`, `import_cv.py`, `validate.py`, 108 prompts); clips not recorded yet
+- [x] 4.2 WER / CER metrics (`evals/metrics/wer.py`) — mixed-script normaliser, corpus WER, `cer_roman` diagnostic, tested
+- [x] 4.3 Deepgram Nova-3 adapter (`language=multi`) — untested live, needs `DEEPGRAM_API_KEY`
+- [x] 4.4 Whisper large-v3 adapter (faster-whisper, CPU int8, forced `hi`) — smoke-tested with `tiny`
+- [x] 4.5 Google STT adapter — Chirp 3 on Speech v2; untested live, needs GCP project + service account
+- [x] 4.6 STT eval runner (`run_stt_eval.py`) — smoke-tested on 3 synthetic clips; + `sarvam-codemix` engine
+- [x] 4.7 Latency metrics helper
+- [x] 4.8 Results summary (table + worst-5 clips per engine)
+- [ ] 4.9 Full run committed + FINDINGS.md `## STT Results`
 
 **Done when:** `run_stt_eval.py` completes across 4 engines. WER/CER/p50/p95 table committed to `results.json` and FINDINGS.md.
 
@@ -174,7 +175,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done · `[-]` skippe
 | 1 — voice-loop | 10 | 9 | 1 | ✅ done |
 | 2 — tools-and-baseline-rag | 12 | 11 | 1 (2.9→Ph3) | ✅ done |
 | 3 — corrective-rag | 11 | 8 | 0 | in progress ⏸ (eval numbers pending) |
-| 4 — stt-eval | 8 | 0 | 0 | not started |
+| 4 — stt-eval | 9 | 6 | 0 | in progress |
 | 5 — tts-eval | 8 | 0 | 0 | not started |
 | 6 — piper-voice | 7 | 0 | 0 | not started |
 | 7 — dashboard | 9 | 0 | 0 | not started |

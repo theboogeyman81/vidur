@@ -6,7 +6,7 @@
 
 ## Features
 
-### 3.1 — STT eval dataset
+### 4.1 — STT eval dataset
 - Directory: `evals/datasets/stt_hinglish/`
 - ~100 audio clips, 16kHz mono WAV
 - Mix of: pure Hindi, pure English, Hinglish code-mixed, fast speech, accented speech
@@ -15,7 +15,7 @@
 - Source: record yourself, use Common Voice Hindi subset, or synthesize with Sarvam TTS then manually correct
 - Minimum viable: 50 clips. Target: 100.
 
-### 3.2 — WER / CER metrics
+### 4.2 — WER / CER metrics
 - File: `evals/metrics/wer.py`
 - Wrap `jiwer` library
 - `compute_wer(hypothesis: str, reference: str) -> float`
@@ -23,26 +23,26 @@
 - Normalise before scoring: lowercase, strip punctuation, collapse whitespace
 - Handle Hindi Devanagari and Latin script in the same batch
 
-### 3.3 — Deepgram Nova adapter (full impl)
+### 4.3 — Deepgram Nova adapter (full impl)
 - File: `agent/providers/stt/deepgram.py`
 - Complete the stub from Phase 2
 - Use Deepgram's async Python SDK
 - Enable `language: hi` and `code_switching: true` params
 - Return `STTResult` with latency
 
-### 3.4 — Whisper large-v3 adapter (full impl)
+### 4.4 — Whisper large-v3 adapter (full impl)
 - File: `agent/providers/stt/whisper.py`
 - Run locally via `faster-whisper` (CPU is fine for eval, not live)
 - Model: `large-v3`, language: `None` (auto-detect)
 - Return `STTResult`; latency will be high — that's expected and important to record
 
-### 3.5 — Google STT adapter (full impl)
+### 4.5 — Google STT adapter (full impl)
 - File: `agent/providers/stt/google.py`
 - Use `google-cloud-speech` async client
 - Config: `BCP-47 hi-IN`, enhanced model, automatic punctuation off
 - Return `STTResult`
 
-### 3.6 — STT eval runner
+### 4.6 — STT eval runner
 - File: `evals/run_stt_eval.py`
 - Load `manifest.jsonl`, iterate clips
 - For each clip × each engine: call `provider.transcribe(audio, 16000)`
@@ -61,12 +61,12 @@
 - Never overwrite previous results — append timestamp to filename
 - CLI: `uv run python -m evals.run_stt_eval --engines sarvam,deepgram,whisper,google`
 
-### 3.7 — Latency metrics helper
+### 4.7 — Latency metrics helper
 - File: `evals/metrics/latency.py`
 - `percentile(values: list[float], p: int) -> float`
 - Used by all eval runners — p50 and p95 reported, never just mean
 
-### 3.8 — Results summary printer
+### 4.8 — Results summary printer
 - File: `evals/run_stt_eval.py` (inline)
 - After eval completes, print a markdown table to stdout:
   ```
