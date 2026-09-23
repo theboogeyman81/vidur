@@ -31,6 +31,7 @@ Thumbs.db
 *_draft.jsonl
 evals/datasets/rag_qa/__pycache__/
 *.wav
+!evals/datasets/stt_hinglish/*.wav
 *.mp3
 vidur.db
 rag/data/ncert/*.pdf
