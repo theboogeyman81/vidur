@@ -25,6 +25,7 @@ class SarvamSTT(lk_stt.STT):
     """Sarvam Saarika v2 STT — LiveKit plugin + eval harness adapter."""
 
     name = "sarvam-saaras"
+    config = {"model": "saaras:v3", "language_code": "hi-IN"}
 
     def __init__(self) -> None:
         super().__init__(
