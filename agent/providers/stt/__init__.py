@@ -2,11 +2,12 @@ import os
 
 from agent.providers.stt.deepgram import DeepgramSTT
 from agent.providers.stt.google import GoogleSTT
-from agent.providers.stt.sarvam import SarvamSTT
+from agent.providers.stt.sarvam import SarvamCodemixSTT, SarvamSTT
 from agent.providers.stt.whisper import WhisperSTT
 
 _REGISTRY: dict[str, type] = {
     "sarvam": SarvamSTT,
+    "sarvam-codemix": SarvamCodemixSTT,
     "deepgram": DeepgramSTT,
     "whisper": WhisperSTT,
     "google": GoogleSTT,

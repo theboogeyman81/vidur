@@ -1,0 +1,120 @@
+# lang|condition|reference transcript (Hindi in Devanagari, English in Latin, numbers as digits)
+# Read naturally, the way you'd actually talk to the tutor. Fix the manifest row if you deviate.
+
+# --- hi-en | clean (50) ---
+hi-en|clean|Article 370 के बारे में थोड़ा explain करो
+hi-en|clean|आज हम polity पढ़ रहे हैं
+hi-en|clean|Fundamental Rights और Directive Principles में क्या difference है
+hi-en|clean|मुझे Preamble का meaning समझाओ simple words में
+hi-en|clean|42nd Amendment को mini constitution क्यों कहते हैं
+hi-en|clean|Money Bill सिर्फ लोक सभा में ही introduce हो सकता है ना
+hi-en|clean|राज्य सभा के members कैसे elect होते हैं
+hi-en|clean|President की emergency powers कितनी types की होती हैं
+hi-en|clean|मुझे एक quiz question दो Parliament पर
+hi-en|clean|यह answer मुझे clear नहीं हुआ फिर से बताओ
+hi-en|clean|Basic Structure doctrine किस case से आया था
+hi-en|clean|Kesavananda Bharati case में क्या हुआ था
+hi-en|clean|Right to Education को Fundamental Right कब बनाया गया
+hi-en|clean|Article 21 का scope इतना wide कैसे हो गया
+hi-en|clean|Governor और President की powers compare करो
+hi-en|clean|Anti Defection Law किस schedule में है
+hi-en|clean|Tenth Schedule के बारे में short में बताओ
+hi-en|clean|Panchayati Raj के लिए 73rd Amendment कब आया था
+hi-en|clean|मुझे लगता है answer option B है
+hi-en|clean|नहीं नहीं मेरा मतलब Rajya Sabha से था
+hi-en|clean|1857 की revolt के main causes क्या थे
+hi-en|clean|Mughal Empire का decline कैसे शुरू हुआ
+hi-en|clean|Non Cooperation Movement Gandhi जी ने क्यों withdraw किया
+hi-en|clean|Chauri Chaura incident कब हुआ था
+hi-en|clean|Quit India Movement और Civil Disobedience में difference बताओ
+hi-en|clean|Simon Commission का boycott क्यों किया गया
+hi-en|clean|Dandi March के बारे में एक question पूछो मुझसे
+hi-en|clean|Subhas Chandra Bose ने INA कब form की
+hi-en|clean|Partition of Bengal का reason क्या था
+hi-en|clean|Moderates और Extremists में क्या फर्क था
+hi-en|clean|आज का session कितना हुआ progress बताओ
+hi-en|clean|मैंने कल federalism वाला topic cover किया था
+hi-en|clean|अगला topic judiciary ले लेते हैं
+hi-en|clean|Supreme Court की original jurisdiction क्या होती है
+hi-en|clean|writ कितने types के होते हैं और habeas corpus क्या है
+hi-en|clean|Election Commission एक constitutional body है या statutory
+hi-en|clean|CAG की report किसको submit होती है
+hi-en|clean|Finance Commission हर पांच साल में बनता है ना
+hi-en|clean|GST Council में कौन कौन members होते हैं
+hi-en|clean|NITI Aayog ने Planning Commission को कब replace किया
+hi-en|clean|थोड़ा slowly बोलो मुझे notes बनाने हैं
+hi-en|clean|इसका एक real life example दो
+hi-en|clean|UPSC prelims में इससे related questions आते हैं क्या
+hi-en|clean|इस topic को Hindi में explain करो please
+hi-en|clean|रुको पहले मेरा doubt सुनो
+hi-en|clean|Concurrent List में कितने subjects हैं
+hi-en|clean|Union List और State List में conflict हो तो क्या होता है
+hi-en|clean|President rule को Article 356 कहते हैं right
+hi-en|clean|मुझे Directive Principles के examples याद नहीं रहते
+hi-en|clean|चलो एक mock question try करते हैं
+
+# --- hi | clean (15) ---
+hi|clean|मौलिक अधिकार कितने प्रकार के होते हैं
+hi|clean|संविधान सभा की पहली बैठक कब हुई थी
+hi|clean|प्रधानमंत्री की नियुक्ति कौन करता है
+hi|clean|लोक सभा का कार्यकाल कितने साल का होता है
+hi|clean|मुझे इस विषय पर एक प्रश्न पूछिए
+hi|clean|राष्ट्रपति पर महाभियोग कैसे चलाया जाता है
+hi|clean|भारत का संविधान किस दिन लागू हुआ था
+hi|clean|आज हमने कौन सा अध्याय पढ़ा
+hi|clean|स्वतंत्रता संग्राम में महिलाओं की भूमिका बताइए
+hi|clean|मुझे यह उत्तर समझ नहीं आया दोबारा बताइए
+hi|clean|नीति निदेशक तत्व न्यायालय में लागू क्यों नहीं होते
+hi|clean|उच्च न्यायालय के न्यायाधीश कैसे हटाए जाते हैं
+hi|clean|पंचायत के चुनाव कौन करवाता है
+hi|clean|भारत छोड़ो आंदोलन किस वर्ष शुरू हुआ
+hi|clean|थोड़ा धीरे बोलिए मैं लिख रहा हूं
+
+# --- en-IN | clean (15) ---
+en-IN|clean|What is the difference between a bill and an act
+en-IN|clean|Can you explain the separation of powers
+en-IN|clean|Give me one question on the Indian freedom struggle
+en-IN|clean|How many Fundamental Duties are there in the Constitution
+en-IN|clean|Who appoints the Chief Election Commissioner
+en-IN|clean|Explain the doctrine of basic structure with an example
+en-IN|clean|What happens if the President returns a bill to Parliament
+en-IN|clean|I think the answer is Article 32
+en-IN|clean|Wait I did not understand the last part
+en-IN|clean|What was the significance of the Government of India Act 1935
+en-IN|clean|Tell me about the role of the Speaker in the Lok Sabha
+en-IN|clean|Can you repeat that a little slower
+en-IN|clean|How is the Vice President elected
+en-IN|clean|What topics did we cover yesterday
+en-IN|clean|Is judicial review a part of the basic structure
+
+# --- hi-en | fast (12) ---
+hi-en|fast|अरे यार Article 14 और Article 15 में difference जल्दी से बता दो
+hi-en|fast|हां हां समझ गया next question पूछो
+hi-en|fast|Money Bill और Finance Bill same होते हैं क्या
+hi-en|fast|मुझे लगता है answer Kesavananda Bharati case है
+hi-en|fast|नहीं वो Rajya Sabha नहीं Lok Sabha होगा
+hi-en|fast|अच्छा तो President का veto तीन types का होता है
+hi-en|fast|चलो ठीक है अब modern history का topic ले लेते हैं
+hi-en|fast|Gandhi Irwin Pact कब sign हुआ था 1931 में ना
+hi-en|fast|रुको रुको मेरा एक doubt है Article 368 पर
+hi-en|fast|इसका short answer दो UPSC style में
+hi-en|fast|Emergency के time Fundamental Rights suspend हो जाते हैं right
+hi-en|fast|ठीक है अब मुझे एक tough question दो
+
+# --- hi-en | noisy (16) — fan / traffic on, mic at arm's length ---
+hi-en|noisy|Article 370 के बारे में थोड़ा explain करो
+hi-en|noisy|Fundamental Rights और Directive Principles में क्या difference है
+hi-en|noisy|मुझे एक quiz question दो Parliament पर
+hi-en|noisy|1857 की revolt के main causes क्या थे
+hi-en|noisy|Supreme Court की original jurisdiction क्या होती है
+hi-en|noisy|यह answer मुझे clear नहीं हुआ फिर से बताओ
+hi-en|noisy|Non Cooperation Movement Gandhi जी ने क्यों withdraw किया
+hi-en|noisy|Election Commission एक constitutional body है या statutory
+hi-en|noisy|रुको पहले मेरा doubt सुनो
+hi-en|noisy|Panchayati Raj के लिए 73rd Amendment कब आया था
+hi-en|noisy|आज का session कितना हुआ progress बताओ
+hi-en|noisy|GST Council में कौन कौन members होते हैं
+hi-en|noisy|Basic Structure doctrine किस case से आया था
+hi-en|noisy|इस topic को Hindi में explain करो please
+hi-en|noisy|Governor और President की powers compare करो
+hi-en|noisy|चलो एक mock question try करते हैं
