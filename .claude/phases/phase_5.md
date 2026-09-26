@@ -6,7 +6,7 @@
 
 ## Features
 
-### 4.1 — TTS eval dataset
+### 5.1 — TTS eval dataset
 - Directory: `evals/datasets/tts_codemix/`
 - ~50 sentences, varying in:
   - Code-mix ratio (pure Hindi → pure English → heavy Hinglish)
@@ -16,27 +16,27 @@
   `{"id": "s001", "text": "Aaj hum Article 370 ke baare mein padh rahe hain", "lang": "hi-en"}`
 - No audio input needed — TTS is synthesis only
 
-### 4.2 — Cartesia Sonic adapter (full impl)
+### 5.2 — Cartesia Sonic adapter (full impl)
 - File: `agent/providers/tts/cartesia.py`
 - Complete the stub from Phase 2
 - Use Cartesia's streaming Python client
 - Capture first audio chunk timestamp for `time_to_first_byte_ms`
 - Return `TTSResult(audio, time_to_first_byte_ms, total_ms)`
 
-### 4.3 — ElevenLabs Flash adapter (full impl)
+### 5.3 — ElevenLabs Flash adapter (full impl)
 - File: `agent/providers/tts/elevenlabs.py`
 - Use ElevenLabs Flash model (lowest latency tier)
 - Streaming: capture TTFB from first chunk
 - Return `TTSResult`
 
-### 4.4 — Piper adapter (full impl)
+### 5.4 — Piper adapter (full impl)
 - File: `agent/providers/tts/piper.py`
 - Run Piper locally via subprocess (ONNX model)
 - Use a pre-trained English or Hindi voice — fine-tuned voice comes in Phase 6
 - TTFB = time to first byte from subprocess stdout
 - Return `TTSResult`
 
-### 4.5 — TTS eval runner
+### 5.5 — TTS eval runner
 - File: `evals/run_tts_eval.py`
 - Load `sentences.jsonl`, iterate sentences
 - For each sentence × each engine: call `provider.synthesize(text, lang)`
@@ -54,20 +54,20 @@
   ```
 - CLI: `uv run python -m evals.run_tts_eval --engines sarvam,cartesia,elevenlabs,piper`
 
-### 4.6 — Audio artifact storage
+### 5.6 — Audio artifact storage
 - Save WAV files under `evals/results/audio/`
 - Filename pattern: `tts_{engine}_{sentence_id}_{timestamp}.wav`
 - These are the files the dashboard's A/B audio player will serve
 - Do not commit audio files to git — add `evals/results/audio/` to `.gitignore`
 
-### 4.7 — Barge-in success measurement (live agent)
+### 5.7 — Barge-in success measurement (live agent)
 - File: `agent/session.py`
 - When a barge-in occurs, record: `barge_in_detected_ms` (when VAD fired during TTS), `tts_cancelled_ms` (when audio stream stopped)
 - `barge_in_latency_ms = tts_cancelled_ms - barge_in_detected_ms`
 - Target: under 300ms. Log to Langfuse span.
 - Add `barge_in_success: bool` — true if TTS stopped before the user finished their next utterance
 
-### 4.8 — Results summary printer
+### 5.8 — Results summary printer
 - After eval completes, print markdown table to stdout:
   ```
   | Engine     | p50 TTFB | p95 TTFB | p50 total | p95 total |
